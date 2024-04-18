@@ -132,6 +132,10 @@ async fn start(client: &InnerClient, buf: Bytes) -> Result<Responses, Error> {
     let mut responses = client.send(RequestMessages::Single(FrontendMessage::Raw(buf)))?;
 
     match responses.next().await? {
+        Message::ParseComplete => match responses.next().await? {
+            Message::BindComplete => {}
+            _ => return Err(Error::unexpected_message()),
+        },
         Message::BindComplete => {}
         _ => return Err(Error::unexpected_message()),
     }
@@ -146,6 +150,9 @@ where
     I::IntoIter: ExactSizeIterator,
 {
     client.with_buf(|buf| {
+        if let Some(query) = statement.query() {
+            frontend::parse("", query, [], buf).unwrap();
+        }
         encode_bind(statement, params, "", buf)?;
         frontend::execute("", 0, buf).map_err(Error::encode)?;
         frontend::sync(buf);

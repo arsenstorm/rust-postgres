@@ -107,7 +107,7 @@ impl Stream for SimpleQueryStream {
                 Message::DataRow(body) => {
                     let row = match &this.columns {
                         Some(columns) => SimpleQueryRow::new(columns.clone(), body)?,
-                        None => return Poll::Ready(Some(Err(Error::unexpected_message()))),
+                        None => return Poll::Ready(Some(Err(Error::closed()))),
                     };
                     return Poll::Ready(Some(Ok(SimpleQueryMessage::Row(row))));
                 }
